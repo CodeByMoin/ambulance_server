@@ -86,19 +86,20 @@ def get_nearest_ambulance():
         ambulance_data = []
         for amb in ambulances:
             amb_dict = amb.to_dict()
-            current_location = amb_dict.get('current_location', {})
-
-            if current_location.get('latitude') is not None and current_location.get('longitude') is not None:
+            current_location = amb_dict.get('current_location')
+        
+            if isinstance(current_location, firestore.GeoPoint):  # ✅ Correctly handling GeoPoint
                 ambulance_data.append({
                     "id": amb_dict.get('ambulance_id', 'Not available'),
-                    "latitude": current_location['latitude'],
-                    "longitude": current_location['longitude'],
+                    "latitude": current_location.latitude,
+                    "longitude": current_location.longitude,
                     "name": amb_dict.get('driver_name', 'Ambulance'),
                     "contact": amb_dict.get('contact_number', 'Not provided'),
                     "status": amb_dict.get('status', 'Not available')
                 })
             else:
-                app.logger.warning(f"Ambulance {amb.id} is missing location data")
+                app.logger.warning(f"Ambulance {amb.id} has invalid location data")
+
 
         # Use Google Distance Matrix API to calculate distances
         min_distance = float('inf')
