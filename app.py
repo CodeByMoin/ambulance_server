@@ -29,6 +29,46 @@ except Exception as e:
 
 app = Flask(__name__)
 
+# -------------------------------------------------------------------
+# Endpoint 1: Geocode an address on the server using Google Geocoding
+# -------------------------------------------------------------------
+@app.route('/geocode-address', methods=['POST'])
+def geocode_address():
+    try:
+        data = request.json
+        if not data or 'address' not in data:
+            return jsonify({"error": "Address not provided"}), 400
+
+        address = data['address']
+        url = "https://maps.googleapis.com/maps/api/geocode/json"
+        params = {
+            "address": address,
+            "key": GOOGLE_MAPS_API_KEY
+        }
+
+        response = requests.get(url, params=params)
+        response_data = response.json()
+
+        if response.status_code == 200:
+            if response_data.get('status') == 'OK':
+                location = response_data['results'][0]['geometry']['location']
+                lat = float(location['lat'])
+                lng = float(location['lng'])
+                return jsonify({"latitude": lat, "longitude": lng}), 200
+            else:
+                # e.g. "ZERO_RESULTS", "REQUEST_DENIED", etc.
+                err = response_data.get('status')
+                return jsonify({"error": f"Geocoding API error: {err}"}), 400
+        else:
+            return jsonify({"error": f"Failed to fetch geocoding data. Status code: {response.status_code}"}), 500
+
+    except Exception as e:
+        app.logger.error(f"Error in /geocode-address: {str(e)}\n{traceback.format_exc()}")
+        return jsonify({"error": str(e)}), 500
+
+# -------------------------------------------------------------------
+# Endpoint 2: Get Nearest Ambulance (original logic)
+# -------------------------------------------------------------------
 @app.route('/get-nearest-ambulance', methods=['POST'])
 def get_nearest_ambulance():
     try:
@@ -122,7 +162,9 @@ def get_nearest_ambulance():
         app.logger.error(f"Error occurred: {str(e)}\n{traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
+# -------------------------------------------------------------------
+# Entry point for local or hosting on Railway
+# -------------------------------------------------------------------
 if __name__ == '__main__':
-    # 3. Read PORT from environment (Railway sets it automatically)
     port = int(os.environ.get("PORT", 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
