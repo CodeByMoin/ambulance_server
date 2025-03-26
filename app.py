@@ -76,6 +76,7 @@ def get_nearest_ambulance():
     """
     Takes JSON: {"location": {"latitude": xx.x, "longitude": yy.y}}
     Finds the nearest ambulance from Firestore (which stores location as a GeoPoint).
+    Only considers ambulances whose status == "available".
     Returns nearest ambulance data.
     """
     try:
@@ -86,8 +87,8 @@ def get_nearest_ambulance():
         user_lat = user_location['latitude']
         user_lng = user_location['longitude']
 
-        # Fetch ambulance locations from Firebase
-        ambulances_ref = db.collection('ambulances')
+        # Fetch only ambulances with status == 'available'
+        ambulances_ref = db.collection('ambulances').where('status', '==', 'available')
         ambulances = ambulances_ref.stream()
 
         ambulance_data = []
@@ -166,6 +167,7 @@ def get_nearest_ambulance():
     except Exception as e:
         app.logger.error(f"Error occurred: {str(e)}\n{traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
+
 
 
 # -------------------------------------------------------------------
