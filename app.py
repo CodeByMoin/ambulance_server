@@ -5,7 +5,8 @@ import traceback
 
 from flask import Flask, request, jsonify
 import firebase_admin
-from firebase_admin import credentials, firestore, GeoPoint
+from firebase_admin import credentials, firestore
+from google.cloud.firestore_v1._helpers import GeoPoint
 import requests
 
 # 1. Load environment variables
